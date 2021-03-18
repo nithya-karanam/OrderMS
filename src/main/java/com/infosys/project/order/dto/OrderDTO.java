@@ -1,8 +1,9 @@
 package com.infosys.project.order.dto;
 
-import java.math.BigDecimal;
-import java.sql.Date;
+
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import com.infosys.project.order.entity.OrderDetails;
@@ -12,25 +13,25 @@ public class OrderDTO {
 
 	private int orderid;
 	private int buyerid;
-	private BigDecimal amount;
-	private Date date;
+	private Double amount;
+	private LocalDate date;
 	private String address;
 	private String status;
-	List<ProductsOrdered> prodOrdered= new ArrayList<ProductsOrdered>();
-
-
-	public List<ProductsOrdered> getProdOrdered() {
-		return prodOrdered;
-	}
-
-	public void setProdOrdered(List<ProductsOrdered> prodOrdered) {
-		this.prodOrdered = prodOrdered;
-	}
+//	List<ProductsOrdered> prodOrdered= new ArrayList<ProductsOrdered>();
+//
+//
+//	public List<ProductsOrdered> getProdOrdered() {
+//		return prodOrdered;
+//	}
+//
+//	public void setProdOrdered(List<ProductsOrdered> prodOrdered) {
+//		this.prodOrdered = prodOrdered;
+//	}
 	public OrderDTO() {
 		super();
 	}
 
-	public OrderDTO(int orderid, int buyerid, double amount,Date date, String address,String status) {
+	public OrderDTO(int orderid, int buyerid, double amount,LocalDate date, String address,String status) {
 		this();
 		this.orderid=orderid;
 		this.buyerid=buyerid;
@@ -55,19 +56,21 @@ public class OrderDTO {
 	}
 
 
-	public BigDecimal getAmount() {
+	public Double getAmount() {
 		return amount;
 	}
 
-	public void setAmount(BigDecimal amount) {
+	public void setAmount(Double amount) {
 		this.amount = amount;
 	}
 
-	public Date getDate() {
+	
+
+	public LocalDate getDate() {
 		return date;
 	}
 
-	public void setDate(Date date) {
+	public void setDate(LocalDate date) {
 		this.date = date;
 	}
 
@@ -95,14 +98,7 @@ public class OrderDTO {
 		orderDTO.setDate(orderDetails.getDate());
 		orderDTO.setAddress(orderDetails.getAddress());
 		orderDTO.setStatus( orderDetails.getStatus());
-		List<ProductsOrdered> prodOrderedList= new ArrayList<ProductsOrdered>();
-		List<ProductsOrdered> ProductsOrdered=orderDetails.getProductsOrdered();
-		for(ProductsOrdered p : ProductsOrdered) {
-			if(p.getOrderid()==orderDetails.getOrderid()) {
-				prodOrderedList.add(p);
-			}
-		}
-		orderDTO.setProdOrdered(prodOrderedList);
+		 
 		return orderDTO;
 	}
 	//converts DTO to entity

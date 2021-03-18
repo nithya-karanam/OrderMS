@@ -6,18 +6,18 @@ import com.infosys.project.order.entity.OrderDetails;
 import com.infosys.project.order.entity.ProductsOrdered;
 
 public class ProductsOrderedDTO {
-//private int buyerid;
+private int orderid;
 private int prodid;
 private int sellerid;
 private int quantity;
 private String status;
-private BigDecimal price;
+private double price;
 
    public ProductsOrderedDTO() {
 	   super();
    }
-   public ProductsOrderedDTO(int prodid, int sellerid, int quantity, String status, BigDecimal price) {
-	  // this.buyerid=buyerid;
+   public ProductsOrderedDTO(int orderid,int prodid, int sellerid, int quantity, String status, double price) {
+	 this.orderid=orderid;
 	   this.prodid=prodid;
 	   this.sellerid=sellerid;
 	   this.quantity=quantity;
@@ -25,12 +25,13 @@ private BigDecimal price;
 	   this.price=price;
 	  
    }
-//public int getBuyerid() {
-//	return buyerid;
-//}
-//public void setBuyerid(int buyerid) {
-//	this.buyerid = buyerid;
-//}
+   
+public int getOrderid() {
+	return orderid;
+}
+public void setOrderid(int orderid) {
+	this.orderid = orderid;
+}
 public int getProdid() {
 	return prodid;
 }
@@ -55,16 +56,16 @@ public String getStatus() {
 public void setStatus(String status) {
 	this.status = status;
 }
-public BigDecimal getPrice() {
+public double getPrice() {
 	return price;
 }
-public void setPrice(BigDecimal price) {
+public void setPrice(double price) {
 	this.price = price;
 }
 //coverts Entity to DTO
 public static ProductsOrderedDTO valueOf(ProductsOrdered productDetails) {
 	ProductsOrderedDTO porderedDTO = new ProductsOrderedDTO();
-	//porderedDTO.setBuyerid(productDetails.getBuyerid());
+	porderedDTO.setOrderid(productDetails.getOrderid());
 	porderedDTO.setProdid(productDetails.getProdid());
 	porderedDTO.setSellerid(productDetails.getSellerid());
 	porderedDTO.setQuantity(productDetails.getQuantity());
@@ -72,5 +73,17 @@ public static ProductsOrderedDTO valueOf(ProductsOrdered productDetails) {
 	porderedDTO.setPrice(productDetails.getPrice());
 	return porderedDTO;
 }
-   
+   //Dto to entity
+public  ProductsOrdered createEntity() {
+	ProductsOrdered prod=new ProductsOrdered();
+	prod.setOrderid(this.getOrderid());
+	prod.setProdid(this.getProdid());
+	prod.setPrice(this.getPrice());
+	prod.setPrice(this.getPrice());
+	prod.setQuantity(this.getQuantity());
+	prod.setSellerid(this.getSellerid());
+	prod.setStatus("ORDER PLACED");
+	return prod;
+	
+}
 }

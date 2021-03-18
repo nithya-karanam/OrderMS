@@ -1,8 +1,12 @@
 package com.infosys.project.order.service;
 
+
+import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +16,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import com.infosys.project.order.repository.OrderRepository;
 import com.infosys.project.order.repository.ProductsOrderedRepo;
+import com.infosys.project.order.dto.CartDTO;
+import com.infosys.project.order.dto.CombinedDTO;
 import com.infosys.project.order.dto.OrderDTO;
+import com.infosys.project.order.dto.ProductsDTO;
+import com.infosys.project.order.dto.ProductsOrderedDTO;
+import com.infosys.project.order.dto.newPlaceOrder;
 import com.infosys.project.order.entity.OrderDetails;
+import com.infosys.project.order.entity.ProductsOrdered;
+import com.infosys.project.order.entity.ProductsOrderedIdusingIdClass;
 
 @Service
 public class OrderService {
@@ -23,32 +34,241 @@ public class OrderService {
 	OrderRepository orderRepo;
 	@Autowired
 	ProductsOrderedRepo productRepo;
-	public List<OrderDTO> getOrderDetails() {
-
+	
+	
+	public List<CombinedDTO> getOrderDetails() {
+        List<CombinedDTO> cmds=new ArrayList();
 		List<OrderDetails> orders = orderRepo.findAll();
 		List<OrderDTO> orderDTOs = new ArrayList<>();
+		CombinedDTO newDTO=null;
 
 		for (OrderDetails order:orders) {
-			OrderDTO orderDTO = OrderDTO.valueOf(order);
-			orderDTOs.add(orderDTO);
+			newDTO=CombinedDTO.valueOf(order);
+			List<ProductsOrdered> prodorders=productRepo.findByorderid(newDTO.getOrderid());
+			List<ProductsOrderedDTO> prodList=new ArrayList<>();
+			for(ProductsOrdered p:prodorders) {
+				ProductsOrderedDTO pdto=ProductsOrderedDTO.valueOf(p);
+				prodList.add(pdto);
+			}
+			newDTO.setProductsOrdered(prodList);
+			cmds.add(newDTO);
 		}
-		logger.info("Order details : {}", orderDTOs);
-		return orderDTOs;
+		
+		return cmds;
 	}
-	public OrderDTO getSpecificOrder(int orderid) {
-		logger.info("Order details : {}", orderid);
-		OrderDTO orderDTO=null;
+	
+	
+	public CombinedDTO getSpecificOrderDetails(int buyerid) {
+		CombinedDTO newDTO=null;
+		Optional<OrderDetails> optOrder=orderRepo.findByBuyerid(buyerid);
+		if(optOrder.isPresent()) {
+			OrderDetails orderDetails=optOrder.get();
+			newDTO=CombinedDTO.valueOf(orderDetails);
+			List<ProductsOrdered> prodorders=productRepo.findByorderid(newDTO.getOrderid());
+		List<ProductsOrderedDTO> prodList=new ArrayList<>();
+		for(ProductsOrdered p:prodorders) {
+			ProductsOrderedDTO pdto=ProductsOrderedDTO.valueOf(p);
+			prodList.add(pdto);
+		}
+		newDTO.setProductsOrdered(prodList);
+		}
+		return newDTO;
+	}
+	public List<ProductsOrderedDTO> productsordered(int sellerid){
+		List<ProductsOrdered> prodorders=productRepo.findBysellerid(sellerid);
+		List<ProductsOrderedDTO> prodlist=new ArrayList<ProductsOrderedDTO>();
+		for(ProductsOrdered p:prodorders) {
+			ProductsOrderedDTO pdto=ProductsOrderedDTO.valueOf(p);
+			prodlist.add(pdto);
+		}
+		return prodlist;
+	}
+	
+	public CombinedDTO getSpecificOrder(int orderid) {
+		CombinedDTO newDTO=null;
 		Optional<OrderDetails> optOrder=orderRepo.findById(orderid);
 		if(optOrder.isPresent()) {
 			OrderDetails orderDetails=optOrder.get();
-	        orderDTO=OrderDTO.valueOf(orderDetails);
+			newDTO=CombinedDTO.valueOf(orderDetails);
+			List<ProductsOrdered> prodorders=productRepo.findByorderid(newDTO.getOrderid());
+		List<ProductsOrderedDTO> prodList=new ArrayList<>();
+		for(ProductsOrdered p:prodorders) {
+			ProductsOrderedDTO pdto=ProductsOrderedDTO.valueOf(p);
+			prodList.add(pdto);
 		}
-		return orderDTO;
+		newDTO.setProductsOrdered(prodList);
+		}
+		return newDTO;
 	}
-	public void placeOrder(OrderDTO orderDTO) {
-		logger.info("Order request for user {}", orderDTO);
-		OrderDetails order = orderDTO.createEntity();
-		orderRepo.save(order);
-	}
+   public Double placeOrder(CartDTO cd,List<ProductsDTO> prodlist) {
+	    double cost=0.0;
+		for(ProductsDTO pd:prodlist) {
+			  if(cd.getProdId().equals(pd.getProdid())) {
+				    cost+=cd.getQuantity()*pd.getPrice();
+				    System.out.println("cost");
+				  
+			  }
+		}
+	return cost;
+}
+   public void toDatabase(newPlaceOrder placeOrder,CartDTO cart,List<ProductsDTO> prodlist, double totalAmount) {
+	  LocalDate date =LocalDate.now();
+	  
+	  OrderDetails order=new OrderDetails();
+	      order.setBuyerid(placeOrder.getBuyerid());
+	      order.setAmount(totalAmount);
+	      order.setAddress(placeOrder.getAddress());
+	      order.setDate(date);
+	      order.setStatus("ORDER PLACED");
+	        OrderDetails or= orderRepo.save(order);
+	         
+	  ProductsOrdered products=new ProductsOrdered();       
+		  for(ProductsDTO prod:prodlist) {
+			     if(cart.getProdId().equals(prod.getProdid())) {
+			    	 System.out.println("dbstart");
+			    	 products.setOrderid(or.getBuyerid());
+			    	  products.setOrderid(or.getOrderid());
+			    	  products.setProdid(prod.getProdid());
+			    	  products.setPrice(prod.getPrice());
+			    	  products.setSellerid(prod.getSellerid());
+			    	  products.setQuantity(cart.getQuantity());
+			    	  products.setStatus("ORDER PLACED");
+			    	 
+			    	  productRepo.save(products);
+			     }
+			     
+			     }
+		     }
+
+    public void reOrder(Integer orderId,Integer prodId) throws Exception{
+	     LocalDate date=LocalDate.now();
+	     Optional<OrderDetails> order=orderRepo.findById(orderId);
+	     ProductsOrderedIdusingIdClass ck=new ProductsOrderedIdusingIdClass();
+	     ck.setOrderid(orderId);
+	     ck.setProdid(prodId);
+	     Optional<ProductsOrdered> products= productRepo.findById(ck);
+	     OrderDTO orderDto=null;
+	     OrderDetails orderEntity=null;
+	     ProductsOrdered prodentity=null;
+	     ProductsOrderedDTO pdto=null;
+	     OrderDTO reorderDTO;
+	     if(order.isPresent()) {
+	    	   OrderDetails entity=order.get();
+	    	   System.out.println(entity.getOrderid());
+	    	   orderDto=OrderDTO.valueOf(entity);
+	    	   System.out.println(orderDto.getOrderid());
+	    	   if(orderId.equals(orderDto.getOrderid())) {
+	    		   orderEntity=new OrderDetails();
+	    		   orderEntity.setBuyerid(orderDto.getBuyerid());
+                   orderEntity.setDate(date);
+                   orderEntity.setAddress(orderDto.getAddress());
+                   orderEntity.setAmount(orderDto.getAmount());
+                   orderEntity.setStatus("ORDER PLACED");
+                   orderRepo.save(orderEntity);
+                   reorderDTO=OrderDTO.valueOf(orderEntity);
+	    	   }
+	    	   else {
+	    		   throw new Exception("NO_BUYER_FOUND");
+	    	   }
+	    	   if(products.isPresent()) {
+	    		   System.out.println(reorderDTO.getOrderid());
+	    	   ProductsOrdered pentity=products.get();
+	    	   pdto=ProductsOrderedDTO.valueOf(pentity);
+	    	   if(prodId.equals(pdto.getProdid())) {
+	    		   prodentity=new ProductsOrdered();
+	    		   prodentity.setOrderid(reorderDTO.getOrderid());
+	    		   prodentity.setProdid(prodId);
+	    		   prodentity.setQuantity(pdto.getQuantity());
+	    		   prodentity.setPrice(pdto.getPrice());
+	    		   prodentity.setSellerid(pdto.getSellerid());
+	    		   prodentity.setStatus("ORDER PLACED");
+	    		   productRepo.save(prodentity);
+	    	   }
+	    	   else
+	    		   throw new Exception("NO_PRODUCT_FOUND");
+	    	   }
+	    	   
+	     }
+	     else {
+	    	 throw new Exception("No_ORDER");
+	     }     
+}
+    
+   
+    
+    public String changeOrderStatus(Integer orderid,String status){
+     	String orderstatus=null;
+	    List<OrderDetails> entities=orderRepo.findAll();
+	    for(OrderDetails entity:entities) {
+	    	 if(orderid.equals(entity.getOrderid())) {
+			 entity.setStatus(status);
+			 orderRepo.save(entity);
+			 orderstatus="Status of your order:"+status;
+			 return orderstatus;
+		 }
+	 }
+	 orderstatus ="Sorry!!!No such order is present to change the status..Please Confirm Your Order";
+	 return orderstatus;
+}
+    public double getOrderAmountUsingBuyerId(int buyerId) throws Exception  {
+    	Optional<OrderDetails> optOrder = orderRepo.findByBuyerid(buyerId);
+    	double amount = -1.0;
+	    if(optOrder.isPresent()) {
+	    	OrderDetails order = optOrder.get();
+	    	amount = order.getAmount();
+	    }
+	return amount;
 	
+}
+    public void changeAmountAccordingToRewardPoints(int buyerId,double amount) {
+    	Optional<OrderDetails> optOrder = orderRepo.findByBuyerid(buyerId);
+    	if(optOrder.isPresent()) {
+    		OrderDetails order = optOrder.get();
+			order.setAmount(amount);
+			orderRepo.save(order);
+	}
+
+}
+    	public boolean checkDeliveryAddress(int buyerId) {
+    		Optional<OrderDetails> optOrder = orderRepo.findByBuyerid(buyerId);
+    		if(optOrder.isPresent()) {
+    			OrderDetails order = optOrder.get();
+    			if(order.getAddress().length()<100) {
+    				return true;
+    			}
+	    
+    		}
+	return false;
+}
+     public String cancelOrder(int orderid) {
+	  Optional<OrderDetails> order=orderRepo.findById(orderid);
+	  if(order.isPresent()) {
+		  OrderDetails order1=order.get();
+		  List<ProductsOrdered> po=productRepo.findByorderid(orderid);
+		    for(ProductsOrdered po1:po) {
+		    	productRepo.delete(po1);
+		    }
+	  orderRepo.delete(order1);
+	  return "DELETED Successfully!!!!!";
+	  }
+
+   return "Sorry!!Your order cannot be deleted";
+  }
+
+
+
+
+
+public List<OrderDTO> getAllOrderDetails() {
+
+	List<OrderDetails> orders = orderRepo.findAll();
+	List<OrderDTO> orderDTOs = new ArrayList<>();
+
+	for (OrderDetails order:orders) {
+		OrderDTO orderDTO = OrderDTO.valueOf(order);
+		orderDTOs.add(orderDTO);
+	}
+	logger.info("Order details : {}", orderDTOs);
+	return orderDTOs;
+}
 }
